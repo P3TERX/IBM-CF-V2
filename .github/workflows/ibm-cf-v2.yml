@@ -1,0 +1,110 @@
+#
+# https://github.com/P3TERX/IBM-CF-V2
+#
+# Copyright (c) 2020 P3TERX <https://p3terx.com>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+
+name: IBM Cloud Foundry - V2Ray
+
+env:
+  IBM_CF_API: https://api.us-south.cf.cloud.ibm.com
+  IBM_CF_APP_MEM: 256M
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+  schedule:
+    - cron: 0 21 * * 5
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      IBM_CF_USERNAME: ${{ secrets.IBM_CF_USERNAME }}
+      IBM_CF_PASSWORD: ${{ secrets.IBM_CF_PASSWORD }}
+      IBM_CF_ORG_NAME: ${{ secrets.IBM_CF_ORG_NAME }}
+      IBM_CF_SPACE_NAME: ${{ secrets.IBM_CF_SPACE_NAME }}
+      IBM_CF_APP_NAME: ${{ secrets.IBM_CF_APP_NAME }}
+      V2_UUID: ${{ secrets.V2_UUID }}
+      V2_WS_PATH: ${{ secrets.V2_WS_PATH }}
+
+    steps:
+
+    - name: Install Cloud Foundry CLI
+      run: |
+        sudo rm -rf /etc/apt/sources.list.d/*
+        wget -qO- https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+        echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+        sudo apt-get update
+        sudo apt-get install cf-cli
+
+    - name: Login to IBM Cloud Foundry
+      run: |
+        cf api "${IBM_CF_API}"
+        cf auth "${IBM_CF_USERNAME}" "${IBM_CF_PASSWORD}"
+        cf target -o "${IBM_CF_ORG_NAME}" -s "${IBM_CF_SPACE_NAME}"
+
+    - name: Download Latest V2Ray
+      run: |
+        DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip"
+        curl -fsSL "$DOWNLOAD_URL" -o "latest-v2ray.zip"
+        unzip latest-v2ray.zip v2ray v2ctl geoip.dat geosite.dat
+        rm latest-v2ray.zip
+        chmod -v 755 v2*
+
+    - name: Generate V2Ray Config File
+      run: |
+        cat > config.json << EOF
+        {
+          "log": {
+            "access": "none"
+          },
+          "inbounds": [
+            {
+              "port": 8080,
+              "protocol": "vless",
+              "settings": {
+                "decryption": "none",
+                "clients": [
+                  {
+                    "id": "${V2_UUID}"
+                  }
+                ]
+              },
+              "streamSettings": {
+                "network":"ws",
+                "wsSettings": {
+                  "path": "${V2_WS_PATH}"
+                }
+              }
+            }
+          ],
+          "outbounds": [
+            {
+              "protocol": "freedom",
+              "settings": {}
+            }
+          ]
+        }
+        EOF
+
+    - name: Generate Manifest File
+      run: |
+        cat > manifest.yml << EOF
+        applications:
+        - name: ${IBM_CF_APP_NAME}
+          memory: ${IBM_CF_APP_MEM}
+          disk_quota: 128M
+          instances: 1
+          random-routes: true
+          command: ./v2ray
+          buildpacks:
+          - binary_buildpack
+        EOF
+
+    - name: Deploy Cloud Foundry App
+      run: cf push
