@@ -103,7 +103,7 @@ jobs:
           memory: ${IBM_CF_APP_MEM}
           disk_quota: 128M
           instances: 1
-          random-routes: true
+          random-route: true
           command: ./v2ray
           buildpacks:
           - binary_buildpack
