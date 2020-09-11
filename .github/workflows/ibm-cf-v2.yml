@@ -44,9 +44,12 @@ jobs:
 
     - name: Login to IBM Cloud Foundry
       run: |
-        cf api "${IBM_CF_API}"
-        cf auth "${IBM_CF_USERNAME}" "${IBM_CF_PASSWORD}"
-        cf target -o "${IBM_CF_ORG_NAME}" -s "${IBM_CF_SPACE_NAME}"
+        cf login \
+          -a "${IBM_CF_API}" \
+          -u "${IBM_CF_USERNAME}" \
+          -p "${IBM_CF_PASSWORD}" \
+          -o "${IBM_CF_ORG_NAME:-$IBM_CF_USERNAME}" \
+          -s "${IBM_CF_SPACE_NAME:-dev}"
 
     - name: Download Latest V2Ray
       run: |
