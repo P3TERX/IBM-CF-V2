@@ -58,6 +58,7 @@ jobs:
         unzip latest-v2ray.zip v2ray v2ctl geoip.dat geosite.dat
         rm latest-v2ray.zip
         chmod -v 755 v2*
+        ./v2ray -version
 
     - name: Generate V2Ray Config File
       run: |
