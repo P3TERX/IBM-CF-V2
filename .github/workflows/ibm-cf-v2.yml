@@ -105,7 +105,7 @@ jobs:
           disk_quota: 128M
           instances: 1
           random-route: true
-          command: ./v2ray
+          command: ./v2ray -config=config.json
           buildpacks:
           - binary_buildpack
         EOF
