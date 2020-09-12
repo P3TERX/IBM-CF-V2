@@ -36,11 +36,9 @@ jobs:
 
     - name: Install Cloud Foundry CLI
       run: |
-        sudo rm -rf /etc/apt/sources.list.d/*
-        wget -qO- https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
-        echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
-        sudo apt-get update
-        sudo apt-get install cf-cli
+        curl -fsSL "https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github&version=v6" | tar -zxC /tmp
+        sudo mv /tmp/cf /usr/local/bin
+        cf version
 
     - name: Login to IBM Cloud Foundry
       run: |
