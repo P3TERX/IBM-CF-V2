@@ -60,7 +60,7 @@ jobs:
 
     - name: Generate V2Ray Config File
       run: |
-        cat > config.json << EOF
+        base64 > config << EOF
         {
           "log": {
             "access": "none"
@@ -103,7 +103,7 @@ jobs:
           disk_quota: 128M
           instances: 1
           random-route: true
-          command: ./v2ray -config=config.json
+          command: cat config | base64 -d > config.json; ./v2ray -config=config.json
           buildpacks:
           - binary_buildpack
         EOF
