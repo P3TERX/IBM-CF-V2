@@ -30,7 +30,8 @@ jobs:
       IBM_CF_SPACE_NAME: ${{ secrets.IBM_CF_SPACE_NAME }}
       IBM_CF_APP_NAME: ${{ secrets.IBM_CF_APP_NAME }}
       V2_UUID: ${{ secrets.V2_UUID }}
-      V2_WS_PATH: ${{ secrets.V2_WS_PATH }}
+      V2_WS_PATH_VMESS: ${{ secrets.V2_WS_PATH_VMESS }}
+      V2_WS_PATH_VLESS: ${{ secrets.V2_WS_PATH_VLESS }}
 
     steps:
 
@@ -59,12 +60,51 @@ jobs:
         ./v2ray -version
         mv v2ray ${IBM_CF_APP_NAME}
 
-    - name: Generate V2Ray Config File
+    - name: Generate V2Ray Config File (VMess)
+      if: ${{ env.V2_WS_PATH_VMESS }}
       run: |
-        base64 > config << EOF
+        base64 << P3TERX > config
         {
           "log": {
-            "access": "none"
+            "access": "none",
+            "loglevel": "error"
+          },
+          "inbounds": [
+            {
+              "port": 8080,
+              "protocol": "vmess",
+              "settings": {
+                "clients": [
+                  {
+                    "id": "${V2_UUID}",
+                    "alterId": 64
+                  }
+                ]
+              },
+              "streamSettings": {
+                "network":"ws",
+                "wsSettings": {
+                  "path": "${V2_WS_PATH_VMESS}"
+                }
+              }
+            }
+          ],
+          "outbounds": [
+            {
+              "protocol": "freedom"
+            }
+          ]
+        }
+        P3TERX
+
+    - name: Generate V2Ray Config File (VLESS)
+      if: ${{ env.V2_WS_PATH_VLESS }}
+      run: |
+        base64 << P3TERX > config
+        {
+          "log": {
+            "access": "none",
+            "loglevel": "error"
           },
           "inbounds": [
             {
@@ -81,23 +121,22 @@ jobs:
               "streamSettings": {
                 "network":"ws",
                 "wsSettings": {
-                  "path": "${V2_WS_PATH}"
+                  "path": "${V2_WS_PATH_VLESS}"
                 }
               }
             }
           ],
           "outbounds": [
             {
-              "protocol": "freedom",
-              "settings": {}
+              "protocol": "freedom"
             }
           ]
         }
-        EOF
+        P3TERX
 
     - name: Generate Manifest File
       run: |
-        cat > manifest.yml << EOF
+        cat << P3TERX > manifest.yml
         applications:
         - name: ${IBM_CF_APP_NAME}
           memory: ${IBM_CF_APP_MEM}
@@ -105,7 +144,7 @@ jobs:
           command: base64 -d config > config.json; ./${IBM_CF_APP_NAME} -config=config.json
           buildpacks:
           - binary_buildpack
-        EOF
+        P3TERX
 
     - name: Deploy Cloud Foundry App
       run: cf push
