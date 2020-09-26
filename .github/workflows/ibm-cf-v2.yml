@@ -11,7 +11,7 @@ name: IBM Cloud Foundry - V2Ray
 
 env:
   IBM_CF_API: https://api.us-south.cf.cloud.ibm.com
-  IBM_CF_APP_MEM: 256M
+  IBM_CF_APP_MEM: 128M
 
 on:
   workflow_dispatch:
