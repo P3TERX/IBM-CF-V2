@@ -57,6 +57,7 @@ jobs:
         rm latest-v2ray.zip
         chmod -v 755 v2*
         ./v2ray -version
+        mv v2ray ${IBM_CF_APP_NAME}
 
     - name: Generate V2Ray Config File
       run: |
@@ -100,10 +101,8 @@ jobs:
         applications:
         - name: ${IBM_CF_APP_NAME}
           memory: ${IBM_CF_APP_MEM}
-          disk_quota: 128M
-          instances: 1
           random-route: true
-          command: cat config | base64 -d > config.json; ./v2ray -config=config.json
+          command: base64 -d config > config.json; ./${IBM_CF_APP_NAME} -config=config.json
           buildpacks:
           - binary_buildpack
         EOF
